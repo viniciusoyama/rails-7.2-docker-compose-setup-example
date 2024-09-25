@@ -1,0 +1,4 @@
+concurrency: <%= ENV['SIDEKIQ_WORKERS'] || 4 %>
+timeout: 3600
+queues:
+  - [default]

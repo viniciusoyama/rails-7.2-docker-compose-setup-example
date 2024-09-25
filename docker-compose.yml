@@ -1,0 +1,41 @@
+services:
+  web:
+    build: .
+    command: bash -c "rm -f tmp/pids/server.pid && bin/rails s -p ${RAILS_HOST_PORT} -b '0.0.0.0'"
+    volumes:
+      - .:/usr/src/app
+      - bundle:/usr/local/bundle
+    ports:
+      - "${RAILS_HOST_PORT}:${RAILS_HOST_PORT}"
+    env_file:
+      - "./.env"
+    tty: true
+    stdin_open: true
+    depends_on:
+      - postgres
+  sidekiq:
+    build: .
+    volumes:
+      - .:/usr/src/app    
+    tty: true
+    env_file:
+      - "./.env"
+    command: "bundle exec sidekiq -C config/sidekiq.yml"
+  postgres:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+  redis:
+    image: "redis:7-alpine"
+    ports:
+      - 6379
+    volumes:
+    - redis_data:/var/lib/redis/data
+volumes:
+  pg_data:
+  bundle:
+  redis_data:

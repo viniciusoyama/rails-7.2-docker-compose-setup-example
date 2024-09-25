@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+DC="${DC:-exec}"
+
+# If we're running in CI we need to disable TTY allocation for docker compose
+# commands that enable it by default, such as exec and run.
+TTY=""
+if [[ ! -t 1 ]]; then
+  TTY="-T"
+fi
+
+# -----------------------------------------------------------------------------
+# Helper functions start with _ and aren't listed in this script's help menu.
+# -----------------------------------------------------------------------------
+
+function _dc {
+  docker compose "${DC}" ${TTY} "${@}"
+}
+
+function _build_run_down {
+  docker compose build
+  docker compose run ${TTY} "${@}"
+  docker compose down
+}
+
+# -----------------------------------------------------------------------------
+
+function cmd {
+  # Run any command you want in the web container
+  _dc web "${@}"
+}
+
+function rails {
+  # Run any Rails commands
+  cmd rails "${@}"
+}
+
+function rspec {
+  docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.test.yml \
+  -f docker-compose.override.yml \
+  run -e "RAILS_ENV=test" --rm web bundle exec rspec "${@}"
+}
+
+function bash {
+  ## Start a Bash session in the web container
+  cmd bash "${@}"
+}
+
+function psql {
+  ## Connect to PostgreSQL with psql
+  # shellcheck disable=SC1091
+  . .env
+ _dc postgres psql -U "${POSTGRES_USER}" "${@}"
+}
+
+function redis-cli {
+  ## Connect to Redis with redis-cli
+  _dc redis redis-cli "${@}"
+}
+
+function bundle:install {
+  ## Install Ruby dependencies and write out a lock file
+  _build_run_down web bundle install
+}
+
+function bundle:outdated {
+  ## List any installed gems that are outdated
+  cmd bundle outdated
+}
+
+function bundle:update {
+  ## Update any installed gems that are outdated
+  cmd bundle update
+  bundle:install
+}
+
+function help {
+  printf "%s <task> [args]\n\nTasks:\n" "${0}"
+
+  compgen -A function | grep -v "^_" | cat -n
+
+  printf "\nExtended help:\n  Each task has comments for general usage\n"
+}
+
+# This idea is heavily inspired by: https://github.com/adriancooney/Taskfile
+TIMEFORMAT=$'\nTask completed in %3lR'
+time "${@:-help}"

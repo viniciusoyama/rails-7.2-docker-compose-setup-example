@@ -55,3 +55,10 @@ group :development do
   gem "error_highlight", ">= 0.4.0", platforms: [:ruby]
 end
 
+group :test do
+  gem 'capybara', '~> 3.40'
+  gem 'database_cleaner'
+  gem 'rspec-rails'
+  gem 'selenium-webdriver', '4.22'
+end
+

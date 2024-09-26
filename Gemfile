@@ -59,6 +59,6 @@ group :test do
   gem 'capybara', '~> 3.40'
   gem 'database_cleaner'
   gem 'rspec-rails'
-  gem 'selenium-webdriver', '4.22'
+  gem 'selenium-webdriver', '4.25.0'
 end
 
